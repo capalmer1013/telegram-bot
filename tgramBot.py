@@ -19,7 +19,8 @@ import logging
 import sys
 import random
 import re
-import convoBot
+import json
+#import convoBot
 
 sys.path.insert(0, "../poetry")
 sys.path.insert(0, "../natural-language")
@@ -31,10 +32,17 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
+xkcdJsonFile = "xkcd.json"
 
 punctuation = ['.', '.', '', '!', '?', '', '', '.', '.', '.'] 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
+
+xkcdJson = json.load(open(xkcdJsonFile))
+titleDict = {x['title']: x['num'] for x in xkcdJson}
+altDict = {x['alt']: x['num'] for x in xkcdJson}
+transcriptDict = {x['transcript']: x['num'] for x in xkcdJson}
+
 def start(bot, update):
     bot.sendMessage(update.message.chat_id, text="you're a cunt")
 
@@ -108,7 +116,40 @@ def yiff(bot, update):
 def tweet(bot, update):
     botResponse = tweeter.generateTweet()
     bot.sendMessage(update.message.chat_id, text=botResponse)
-    
+
+
+def searchXKCD(query):
+    query = query[len("/xkcd"):]
+    answers = []
+    pre = "https://xkcd.com/"
+    for x in titleDict:
+        if query.lower() in x.lower():
+            answers.append(titleDict[x])
+
+    if len(answers):
+        return pre + str(answers[random.randint(0, len(answers)-1)])
+
+    for x in altDict:
+        if query.lower() in x.lower():
+            answers.append(altDict[x])
+
+    if len(answers):
+        return pre + str(answers[random.randint(0, len(answers)-1)])
+
+    for x in transcriptDict:
+        if query.lower() in x.lower():
+            answers.append(transcriptDict[x])
+
+    if len(answers):
+        return pre + str(answers[random.randint(0, len(answers)-1)])
+
+    return "You suck. No results."
+
+def xkcd(bot, update):
+    botResponse = searchXKCD(update['message']['text'])
+    bot.sendMessage(update.message.chat_id, text=botResponse)
+
+
 def main():
     # Create the EventHandler and pass it your bot's token.
     updater = Updater("266646927:AAFJD84hNXfo3dLtiJbaOkixEeh-BZZYvmE")
@@ -117,16 +158,18 @@ def main():
     dp = updater.dispatcher
 
     # on different commands - answer in Telegram
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", help))
-    dp.add_handler(CommandHandler("kill", kill))
-    dp.add_handler(CommandHandler("fuck", fuck))
-    dp.add_handler(CommandHandler("poem", poem))
-    dp.add_handler(CommandHandler("drink", drink))
-    dp.add_handler(CommandHandler("yiff", yiff))
+    #dp.add_handler(CommandHandler("start", start))
+    #dp.add_handler(CommandHandler("help", help))
+    #dp.add_handler(CommandHandler("kill", kill))
+    #dp.add_handler(CommandHandler("fuck", fuck))
+    #dp.add_handler(CommandHandler("poem", poem))
+    #dp.add_handler(CommandHandler("drink", drink))
+    #dp.add_handler(CommandHandler("yiff", yiff))
     dp.add_handler(CommandHandler("tweet", tweet))
+    dp.add_handler(CommandHandler("xkcd", xkcd))
+    dp.add_handler(CommandHandler("XKCD", xkcd))
     # on noncommand i.e message - echo the message on Telegram
-    dp.add_handler(MessageHandler([Filters.text], echo))
+    #dp.add_handler(MessageHandler([Filters.text], echo))
 
     # log all errors
     dp.add_error_handler(error)
